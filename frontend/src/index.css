@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Petit bonus pour le fond */
+body {
+  background-color: #f8fafc; /* Gris très clair, style dashboard */
+}
