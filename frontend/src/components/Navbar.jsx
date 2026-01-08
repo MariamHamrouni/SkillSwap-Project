@@ -38,6 +38,10 @@ const Navbar = () => {
                 <div className="flex items-center gap-4 ml-4">
                   <span className="text-sm font-semibold text-gray-700">Bonjour, {user.username}</span>
                   {/* BOUTON LOGOUT BRANCHE SUR LE CONTEXT */}
+                  <Link to="/profile" className="flex items-center gap-2 hover:text-blue-600 transition">
+        <User size={20} />
+        <span>SETTING</span>
+      </Link>
                   <button 
                     onClick={logout} 
                     className="flex items-center gap-2 bg-red-50 text-red-600 px-4 py-2 rounded-full hover:bg-red-100 transition"

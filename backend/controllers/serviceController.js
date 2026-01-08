@@ -1,5 +1,5 @@
 const Service = require('../models/Service');
-
+const Review = require('../models/Review');
 // @desc    Créer un nouveau service (Gig)
 // @route   POST /api/services
 // @access  Privé
@@ -55,15 +55,26 @@ const getServices = async (req, res) => {
 // @route   GET /api/services/:id
 const getServiceById = async (req, res) => {
   try {
-    // .populate('seller') est MAGIQUE : il va chercher les infos de l'utilisateur qui a créé le service
+    // 1. Récupérer le service et le vendeur
     const service = await Service.findById(req.params.id).populate('seller', 'username email');
 
     if (service) {
-      res.json(service);
+      // 2. Chercher TOUS les avis liés à ce service
+      // On utilise .populate('user') pour avoir le nom de la personne qui a écrit l'avis
+      const reviews = await Review.find({ service: req.params.id })
+        .populate('user', 'username')
+        .sort({ createdAt: -1 }); // Les plus récents en premier
+
+      // 3. Renvoyer le service ET le tableau d'avis
+      res.json({
+        ...service._doc,
+        reviews
+      });
     } else {
       res.status(404).json({ message: 'Service non trouvé' });
     }
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
 };

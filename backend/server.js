@@ -22,11 +22,15 @@ const authRoutes = require("./routes/authRoutes");
 const serviceRoutes = require("./routes/serviceRoutes");
 const aiRoutes = require("./routes/aiRoutes");
 const orderRoutes = require("./routes/orderRoutes");
+const reviewRoutes = require("./routes/reviewRoutes");
+const profileRoutes = require("./routes/profileRoutes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/services", serviceRoutes);
 app.use("/api/ai", aiRoutes);
 app.use('/api/orders', orderRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/profiles', profileRoutes);
 // Static
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

@@ -4,76 +4,72 @@ const Service = require("../models/Service");
 const createOrder = async (req, res) => {
   try {
     const { serviceId } = req.params;
-
-    // 1. Récupération sécurisée de l'ID de l'acheteur
-    // On gère les différents cas (req.user ou req.userId)
+    
+    // Identification de l'acheteur
     const buyerId = req.user ? req.user._id : req.userId;
 
     if (!buyerId) {
-        return res.status(401).json({ message: "Vous devez être connecté pour commander." });
+      return res.status(401).json({ message: "Vous devez être connecté pour commander." });
     }
 
-    // 2. Récupération du service
-    const service = await Service.findById(serviceId);
-    if (!service) {
-        return res.status(404).json({ message: "Service introuvable" });
+    // Récupération du service pour obtenir le prix et le vendeur
+    const serviceDetails = await Service.findById(serviceId);
+    if (!serviceDetails) {
+      return res.status(404).json({ message: "Service introuvable." });
     }
 
-    // 🚨 3. CORRECTION DU CRASH (Protection contre les services sans vendeur)
-    // Si le service n'a pas de champ userId, on arrête tout proprement au lieu de planter.
-    if (!service.userId) {
-        return res.status(400).json({ 
-            message: "Impossible de commander : Ce service n'est rattaché à aucun vendeur valide." 
-        });
+    // Vérification : un utilisateur ne peut pas acheter son propre service
+    if (serviceDetails.seller.toString() === buyerId.toString()) {
+      return res.status(400).json({ message: "Vous ne pouvez pas acheter votre propre service." });
     }
 
-    // 4. Vérification : On ne peut pas s'acheter soi-même
-    // Maintenant que l'on sait que les deux IDs existent, on peut faire toString()
-    if (service.userId.toString() === buyerId.toString()) {
-        return res.status(400).json({ message: "Vous ne pouvez pas acheter votre propre service." });
-    }
-
-    // 5. Création de la commande
+    
     const newOrder = new Order({
-        serviceId: serviceId,
-        buyerId: buyerId,
-        sellerId: service.userId, 
-        status: 'completed',
-        isPaid: true
+      buyer: buyerId,           
+      service: serviceId,       
+      totalPrice: serviceDetails.price, 
+      status: 'completed'
     });
 
     await newOrder.save();
 
-    res.status(201).json({ message: "Commande validée ! Vous pouvez maintenant noter ce service." });
+    res.status(201).json({ 
+      success: true,
+      message: "Commande validée avec succès !",
+      order: newOrder 
+    });
 
   } catch (error) {
     console.error("ERREUR CREATE ORDER :", error);
-    res.status(500).json({ message: "Erreur serveur lors de la commande." });
+    res.status(500).json({ 
+      message: "Erreur interne du serveur", 
+      error: error.message 
+    });
   }
 };
 const getMyOrders = async (req, res) => {
   try {
     const userId = req.user ? req.user._id : req.userId;
 
-    // 1. Ce que j'ai acheté (Je suis le buyerId)
-    const purchases = await Order.find({ buyerId: userId })
-      .populate('serviceId', 'title price image') // On récupère les infos du service
-      .populate('sellerId', 'username email');   // On récupère les infos du vendeur
+    const purchases = await Order.find({ buyer: userId })
+      .populate({
+        path: 'service',
+        // On descend dans le service pour récupérer les infos du vendeur (seller)
+        populate: {
+          path: 'seller',
+          select: 'username email'
+        }
+      });
 
-    // 2. Ce que j'ai vendu (Je suis le sellerId)
-    const sales = await Order.find({ sellerId: userId })
-      .populate('serviceId', 'title price')
-      .populate('buyerId', 'username email');
+    const totalSpent = purchases.reduce((acc, curr) => acc + (curr.totalPrice || 0), 0);
 
-    // On renvoie les deux listes
     res.status(200).json({ 
-        purchases, // Mes achats
-        sales      // Mes ventes
+      purchases, 
+      totalSpent 
     });
-
   } catch (error) {
-    res.status(500).json({ message: "Erreur récupération commandes" });
+    console.error("ERREUR FATALE GET_ORDERS :", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
-
 module.exports = { createOrder, getMyOrders };

@@ -9,6 +9,7 @@ import CreateService from './pages/CreateService';
 import Home from './pages/Home';
 import ServiceDetails from './pages/ServiceDetails';
 import Dashboard from './pages/Dashboard';
+import Profile from './pages/Profil';
 
 
 function App() {
@@ -25,6 +26,9 @@ function App() {
           <Route path="/create-service" element={<CreateService />} />
           <Route path="/service/:id" element={<ServiceDetails />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/profile" element={<Profile />} />
+         
+          
         </Routes>
       </div>
     </BrowserRouter>
